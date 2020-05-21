@@ -160,27 +160,25 @@ binning_server <- function(input, output, session, modeltraintest,
         numericInput(session$ns("splitval"), "Value", value = 0),
         actionButton(session$ns("dosplit"), "Split")
       ),
-      mainPanel(
+          mainPanel(
         
         jqui_sortable(div(id = 'plots',
                           plotOutput(session$ns("woetraintest")),
                           plotOutput(session$ns("woe_plot")),
-                          plotOutput(session$ns("distr_plot")),
-                          jqui_draggable(plotOutput(session$ns("distr_plot")))
-        )),
+                          plotOutput(session$ns("distr_plot"))
+                      )),
         
-        # plotOutput(session$ns("woetraintest")),
-        #  br(),
-        # div(helpText("Weight of Evidence plot"), style = "font-weight:bold;"),    
-        # plotOutput(session$ns("woe_plot") ),
-        #  div(helpText("Distribution plot"), style = "font-weight:bold;"), 
-        # plotOutput(session$ns("distr_plot") ),
+       # plotOutput(session$ns("woetraintest")),
+      #  br(),
+       # div(helpText("Weight of Evidence plot"), style = "font-weight:bold;"),    
+       # plotOutput(session$ns("woe_plot") ),
+      #  div(helpText("Distribution plot"), style = "font-weight:bold;"), 
+       # plotOutput(session$ns("distr_plot") ),
         div(helpText("Weight of Evidence and Information Value - Training"), style = "font-weight:bold;"),
         rHandsontableOutput(session$ns("ivtrain")),
         br(),
         div(helpText("Weight of Evidence and Information Value - Test"), style = "font-weight:bold;"),        
         rHandsontableOutput(session$ns("ivtest"))
-
       )
     )
   })
