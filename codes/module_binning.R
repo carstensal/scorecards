@@ -1,5 +1,8 @@
 # Binning Module - Helpers ------------------------------------------------
 
+result=smbinning(df=smbsimdf1,y="fgood",x="cbs1") # Run and save result
+
+
 #' Bin numeric variable
 #'
 #' @param x Character string indicating which variable is being binned 
@@ -12,6 +15,8 @@
 #' @return A list of two components, the first component is the binned variable
 #'     in the training data and the second component is the binning applied on
 #'     the test data
+#'     
+#'     
 binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL,
                             type = "CIT") {
   if (is.null(cuts) && type == "CIT") {
@@ -158,16 +163,14 @@ binning_server <- function(input, output, session, modeltraintest,
       mainPanel(
         plotOutput(session$ns("woetraintest")),
         br(),
-        div(
-          helpText("Weight of Evidence and Information Value - Training"),
-          style = "font-weight:bold;"
-        ),
+        div(helpText("Weight of Evidence plot"), style = "font-weight:bold;"),    
+        plotOutput(session$ns("woe_plot") ),
+        div(helpText("Distribution plot"), style = "font-weight:bold;"), 
+        plotOutput(session$ns("distr_plot") ),
+        div(helpText("Weight of Evidence and Information Value - Training"), style = "font-weight:bold;"),
         rHandsontableOutput(session$ns("ivtrain")),
         br(),
-        div(
-          helpText("Weight of Evidence and Information Value - Test"),
-          style = "font-weight:bold;"
-        ),        
+        div(helpText("Weight of Evidence and Information Value - Test"), style = "font-weight:bold;"),        
         rHandsontableOutput(session$ns("ivtest"))
       )
     )
@@ -423,11 +426,11 @@ binning_server <- function(input, output, session, modeltraintest,
   
   # WoE plot.
   output$woetraintest <- renderPlot({
-    bin <- req(binning()[[input$binvar]])
-    validate(need(class(bin$bin_train) != "character",
-                  message = "Variable not binned"))
+    bin <<- req(binning()[[input$binvar]])
+    validate(need(class(bin$bin_train) != "character", message = "Variable not binned"))
     gtrain <- select(bin$bin_train$ivtable, Cutpoint, WoE) %>%
       mutate(ds = "Training")
+    
     gtest <- select(bin$bin_test$ivtable, Cutpoint, WoE) %>%
       mutate(ds = "Test")
     gds <- bind_rows(gtrain, gtest) %>%
@@ -452,6 +455,22 @@ binning_server <- function(input, output, session, modeltraintest,
         legend.text = element_text(size = 15)
       )
   })
+  
+  #WoE
+  output$woe_plot <- renderPlot({
+    bin <- req(binning()[[input$binvar]])
+    smbinning.plot(bin$bin_train,option="WoE")
+    
+  })
+  
+  output$distr_plot <- renderPlot({
+    bin <- req(binning()[[input$binvar]])
+    smbinning.plot(bin$bin_train,option="dist")
+    
+  })
+  
+  
+ # smbinning.plot(result,option="dist",sub="Credit Score")
   
   # Train/test iv tables.
   prepare_HOT <- function(ivtable) {
