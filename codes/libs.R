@@ -1,7 +1,25 @@
 # Packages ----------------------------------------------------------------
 
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(shiny, shinythemes, rhandsontable, readr, knitr, summarytools, ggplot2, dplyr, smbinning, tidyr, car)
+
+list.of.packages <- c("pacman"
+    , "shiny"
+    , "shinythemes" 
+    , "rhandsontable"
+    , "readr"
+    , "knitr"
+    , "summarytools"
+    , "ggplot2"
+    , "dplyr"
+    , "smbinning"
+    , "tidyr"
+    , "car"
+    , "shinyjqui")
+
+#checking missing packages from list
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+
+#install missing ones
+if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)
 
 library(shiny)
 library(shinythemes)
@@ -14,6 +32,7 @@ library(dplyr)
 library(smbinning)
 library(tidyr)
 library(car)
+library(shinyjqui)
 
 # Options -----------------------------------------------------------------
 
