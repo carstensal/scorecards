@@ -1,8 +1,5 @@
 # Binning Module - Helpers ------------------------------------------------
 
-result=smbinning(df=smbsimdf1,y="fgood",x="cbs1") # Run and save result
-
-
 #' Bin numeric variable
 #'
 #' @param x Character string indicating which variable is being binned 
@@ -17,30 +14,30 @@ result=smbinning(df=smbsimdf1,y="fgood",x="cbs1") # Run and save result
 #'     the test data
 #'     
 #'     
-binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL,
-                            type = "CIT") {
-  if (is.null(cuts) && type == "CIT") {
-    bin_train <- smbinning(dftrain, y, x)
-  } else if (is.null(cuts) && type != "CIT") {
-    cuts <- unique(
-      c(min(dftrain[[x]], na.rm = TRUE),
-        quantiles = quantile(
-          dftrain[[x]], probs = seq(0.1, 1, by = 0.1),
-          na.rm = TRUE
-        )
-      )
-    )
-    bin_train <- smbinning.custom(dftrain, y, x, cuts)
-  } else {
-    bin_train <- smbinning.custom(dftrain, y, x, cuts)
-  }
-  if (class(bin_train) != "character") {
-    bin_test <- smbinning.custom(dftest, y, x, bin_train$cuts)
-  } else {
-    bin_test <- bin_train
-  }
-  list(bin_train = bin_train, bin_test = bin_test)
-}
+# binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL,
+#                             type = "CIT") {
+#   if (is.null(cuts) && type == "CIT") {
+#     bin_train <- smbinning(dftrain, y, x)
+#   } else if (is.null(cuts) && type != "CIT") {
+#     cuts <- unique(
+#       c(min(dftrain[[x]], na.rm = TRUE),
+#         quantiles = quantile(
+#           dftrain[[x]], probs = seq(0.1, 1, by = 0.1),
+#           na.rm = TRUE
+#         )
+#       )
+#     )
+#     bin_train <- smbinning.custom(dftrain, y, x, cuts)
+#   } else {
+#     bin_train <- smbinning.custom(dftrain, y, x, cuts)
+#   }
+#   if (class(bin_train) != "character") {
+#     bin_test <- smbinning.custom(dftest, y, x, bin_train$cuts)
+#   } else {
+#     bin_test <- bin_train
+#   }
+#   list(bin_train = bin_train, bin_test = bin_test)
+# }
 
 #' Bin categorical variable
 #'
