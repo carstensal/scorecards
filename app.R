@@ -1,16 +1,16 @@
 # Source Files ------------------------------------------------------------
 
-source("codes/libs.R")
-source("codes/utils.R")
-source("codes/module_data.R")
-source("codes/module_explore.R")
-source("codes/module_sample.R")
-source("codes/module_binning.R")
-source("codes/module_model.R")
-source("codes/module_validation.R")
-source("codes/module_download.R")
-source("codes/server.R")
-source("codes/ui.R")
+source("code/libraries.R")
+source("code/utilities.R")
+source("code/modules/module_data.R")
+source("code/modules/module_explore.R")
+source("code/modules/module_sample.R")
+source("code/modules/module_binning.R")
+source("code/modules/module_model.R")
+source("code/modules/module_validation.R")
+source("code/modules/module_download.R")
+source("code/server.R")
+source("code/ui.R")
 
 # Help Files --------------------------------------------------------------
 
