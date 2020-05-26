@@ -1,6 +1,9 @@
 # Application - Server ----------------------------------------------------
 
 server <- shinyServer(function(input, output, session) {
+  
+  #observe_helpers(help_dir = "help")
+  observe_helpers(help_dir = 'helpfiles')
 
   # Session Globals ---------------------------------------------------------
   current_tab <- "data"

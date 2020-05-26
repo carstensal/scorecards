@@ -2,7 +2,7 @@
 
 source("code/libraries.R")
 source("code/utilities.R")
-source("code/functions.R")
+source("code/functions/functions.R")
 source("code/modules/module_data.R")
 source("code/modules/module_explore.R")
 source("code/modules/module_sample.R")

@@ -1,8 +1,7 @@
 # Packages ----------------------------------------------------------------
 
 
-list.of.packages <- c("pacman"
-    , "shiny"
+list.of.packages <- c("shiny"
     , "shinythemes" 
     , "rhandsontable"
     , "readr"

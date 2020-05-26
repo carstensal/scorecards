@@ -15,8 +15,7 @@ data_generate_specs <- function(df) {
   vnames <- gsub("\\.", "_", make.names(colnames(df), unique = TRUE))
   vclasses <- vapply(df, class, character(1))
   vtypes <- vapply(df, class, character(1))
-  vtypes <- factor(vtypes, levels = c("numeric", "integer", "character",
-                                      "Date"))
+  vtypes <- factor(vtypes, levels = c("numeric", "integer", "character", "Date"))
   vgoodbad <- rep(FALSE, times = length(vnames))
   vstratsample <- rep(FALSE, times = length(vnames))
   vbin <- rep(TRUE, times = length(vnames))
@@ -39,16 +38,15 @@ data_ui <- function(id) {
   ns <- NS(id)
   tagList(
     column(
-      9,
-      fileInput(ns("modeldata"), "Upload Data", accept = "text/csv",
-                placeholder = "CSV file"),
-      downloadLink(ns("downloadmodeldata"), "Download simulated data"),
+      12,
+      fileInput(ns("modeldata"), "Upload Data", accept = "text/csv", placeholder = "CSV file") %>% helper(type = "markdown",
+                                                                                                          content = "data-upload"),
+      downloadLink(ns("downloadmodeldata"), "Download simulated data") ,
       br(),
       br(),
       br(),
       rHandsontableOutput(ns("modeldataspecs"))
-    ),
-    column(3, includeMarkdown("qh_data.md"))
+    )
   )
   
 }
@@ -72,7 +70,7 @@ data_server <- function(input, output, session) {
     content = function(con) {
       write_csv(smbsimdf1, con)
     }
-  )
+  ) 
   
   # Ensure user upload.
   modeldatafile <- reactive({
