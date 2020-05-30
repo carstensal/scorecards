@@ -1,6 +1,4 @@
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
-```
+
 
 ## Help
 ##### (Click ? for hints)
