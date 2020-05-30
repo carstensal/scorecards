@@ -223,53 +223,41 @@ smbinning2 = function(df,y,x,p=0.05){
     
     cutvct=cutvct[order(cutvct[,1]),] # Sort / converts to a ordered vector (asc)
     cutvct=ifelse(cutvct<0,trunc(10000*cutvct)/10000,ceiling(10000*cutvct)/10000) # Round to 4 dec. to avoid borderline cases
+    cutpoint=max(df[,j],na.rm=TRUE) # Calculte Max without Missing
+    cutpoint=ifelse(cutpoint<0,trunc(10000*cutpoint)/10000,ceiling(10000*cutpoint)/10000) # Round to 4 dec. to avoid borderline cases
+    
+    cutvct <- c(cutvct, cutpoint)
+    
     # Build Information Value Table #############################################
     # Counts per not missing cutpoint
-    # ivt=data.frame(matrix(ncol=0,nrow=0)) # Empty table
-    # n=length(cutvct) # Number of cutpoits
-    # for (i in 1:n) {
-    # cutpoint=cutvct[i]
-    # ivt=rbind(ivt,
-    # fn$sqldf(
-    # "select '<= $cutpoint' as Cutpoint,
-    # NULL as CntRec,
-    # NULL as CntGood,
-    # NULL as CntBad,
-    # sum(case when $x <= $cutpoint and $y in (1,0) then 1 else 0 end) as CntCumRec,
-    # sum(case when $x <= $cutpoint and $y=1 then 1 else 0 end) as CntCumGood,
-    # sum(case when $x <= $cutpoint and $y=0 then 1 else 0 end) as CntCumBad,
-    # NULL as PctRec,
-    # NULL as GoodRate,
-    # NULL as BadRate,
-    # NULL as Odds,
-    # NULL as LnOdds,
-    # NULL as WoE,
-    # NULL as IV
-    # from df where $x is not NULL and $y is not NULL")
-    # )
-    # }
-    cutvct <<- cutvct
-    ds1 <- select(df, x, y)
-    colnames(ds1) <- 
-      
-      ds2 <<- ds1
-    cuts <- data.frame(Cutpoint = paste("<=", cutvct), CutStart = cutvct)
+    
+    cuts <- data.frame(Cutpoint = paste("<=", cutvct), CutStart = cutvct, stringsAsFactors=FALSE)
+    cut1 <<- cuts
+    
+    # SHould be able to add last level > into dplyr, but breaks nums for some reason, check if have time. Much faster than sql setup
+    # cuts <- rbind(cuts, c(paste(">", max(cutvct)), cutpoint))
+    
+    
+    ds1 <- select(df, x, y) %>%
+      filter(!is.na(x))
+    
+    colnames(ds1) <- c("X_Var", "Y_Var")
     
     result <- cuts %>% group_by(Cutpoint) %>% 
       mutate(
-        CntRec = NA,
-        CntGood = NA,
-        CntBad = NA,
-        CntCumRec  = length(which(ds1$x <= CutStart )), 
-        CntCumGood  = length(which(ds1$x <= CutStart & ds1$y == 1)),
-        CntCumBad  = length(which(ds1$x <= CutStart & ds1$y == 0)),
-        PctRec = NA,
-        GoodRate = NA,
-        BadRate = NA,
-        Odds = NA,
-        LnOdds = NA,
-        WoE = NA,
-        IV = NA
+        CntRec = 0,
+        CntGood = 0,
+        CntBad = 0,
+        CntCumRec  = length(which(ds1$X_Var <= CutStart )), 
+        CntCumGood  = length(which(ds1$X_Var <= CutStart & ds1$Y_Var == 1)),
+        CntCumBad  = length(which(ds1$X_Var <= CutStart & ds1$Y_Var == 0)),
+        PctRec = 0,
+        GoodRate = 0,
+        BadRate = 0,
+        Odds = 0,
+        LnOdds = 0,
+        WoE = 0,
+        IV = 0
       )
     result <<- result
     ivt <- as.data.frame(select(result, -CutStart))
@@ -280,32 +268,14 @@ smbinning2 = function(df,y,x,p=0.05){
     
     ivt2 <<- ivt
     
-    cutpoint=max(df[,j],na.rm=T) # Calculte Max without Missing
-    cutpoint=ifelse(cutpoint<0,trunc(10000*cutpoint)/10000,ceiling(10000*cutpoint)/10000) # Round to 4 dec. to avoid borderline cases
     maxcutpoint=max(cutvct) # Calculte Max cut point
     mincutpoint=min(df[,j],na.rm=T) # Calculte Min without Missing for later usage
     mincutpoint=ifelse(mincutpoint<0,trunc(10000*mincutpoint)/10000,ceiling(10000*mincutpoint)/10000) # Round to 4 dec. to avoid borderline cases 
-    ivt=rbind(ivt,
-              fn$sqldf(
-                "select '> $maxcutpoint' as Cutpoint,
-                      NULL as CntRec,
-                      NULL as CntGood,
-                      NULL as CntBad,
-                      sum(case when $x <= $cutpoint and $y in (1,0) then 1 else 0 end) as CntCumRec,
-                      sum(case when $x <= $cutpoint and $y=1 then 1 else 0 end) as CntCumGood,
-                      sum(case when $x <= $cutpoint and $y=0 then 1 else 0 end) as CntCumBad,
-                      NULL as PctRec,
-                      NULL as GoodRate,
-                      NULL as BadRate,
-                      NULL as Odds,
-                      NULL as LnOdds,
-                      NULL as WoE,
-                      NULL as IV
-                      from df where $x is not NULL and $y is not NULL")
-    )
+    
     
     cat(proc.time() - ptm)
     cat("RBIND SQL \n")
+    ivt3 <<- ivt
     
     # Missing Data
     x.na=fn$sqldf("select count(*) from df where $x is null")  
@@ -334,6 +304,7 @@ smbinning2 = function(df,y,x,p=0.05){
     else {
       ivt=rbind(ivt,
                 c("Missing",0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA))}
+    ivt4 <<- ivt
     
     cat(proc.time() - ptm)
     cat("NA Rbind \n")
@@ -435,4 +406,3 @@ smbinning2 = function(df,y,x,p=0.05){
   list(ivtable=ivt,iv=iv,ctree=ctree,bands=bands,x=x,col_id=j,cuts=cutvct)
   
 }
-
