@@ -148,13 +148,14 @@ explore_ui <- function(id) {
   ns <- NS(id)
   tagList(
     column(
-      9,
+      12,
       radioButtons(ns("exploreonesumm"), "Choose view", inline = TRUE,
                    choices = c("All Variables", "Single Variable"),
                    selected = "All Variables"),
-      uiOutput(ns("explorewindow"))
-    ),
-    column(3, includeMarkdown("qh_explore.md"))
+      uiOutput(ns("explorewindow"))%>% helper(type = "markdown",
+                                              content = "qh_explore")
+    )
+    #column(3, includeMarkdown("qh_explore.md"))
   )
   
 }

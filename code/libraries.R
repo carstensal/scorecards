@@ -13,7 +13,8 @@ list.of.packages <- c("shiny"
     , "tidyr"
     , "car"
     , "shinyjqui"
-    , "shinyhelper")
+    , "shinyhelper"
+    , "pbapply")
 
 #checking missing packages from list
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -34,6 +35,7 @@ library(tidyr)
 library(car)
 library(shinyjqui)
 library(shinyhelper)
+library(pbapply)
 
 # Options -----------------------------------------------------------------
 
