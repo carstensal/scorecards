@@ -44,8 +44,10 @@ data_ui <- function(id) {
       downloadLink(ns("downloadmodeldata"), "Download simulated data") ,
       br(),
       br(),
+      renderText(na("df_structure")),
+      rHandsontableOutput(ns("modeldataspecs")),
       br(),
-      rHandsontableOutput(ns("modeldataspecs"))
+      verbatimTextOutput(ns("df_structure"))
     )
   )
   
@@ -87,6 +89,19 @@ data_server <- function(input, output, session) {
       Sys.sleep(1)
     }, message = "Reading data...", value = 0.5)
     md
+  })
+  
+  
+  output$df_structure<-renderPrint({
+    datadf <- modeldata()
+    
+    one_entry <- function(x) {
+      for (i in length(x)) attr(x[[i]], "names") <- NULL
+      return(x)
+    }
+    datadf <- lapply(datadf, FUN = one_entry)
+    
+      str(datadf)
   })
   
   # If the user uploads new data, then regenerate the specifications.

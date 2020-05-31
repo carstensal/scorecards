@@ -14,7 +14,7 @@
 #'     
 binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL, type = "CIT") {
     if (is.null(cuts) && type == "CIT") {
-        bin_train <- smbinning(dftrain, y, x)
+        bin_train <- smbinning2(dftrain, y, x)
     } else if (is.null(cuts) && type != "CIT") {
         cuts <- unique(c(min(dftrain[[x]], na.rm = TRUE), quantiles = quantile(dftrain[[x]], probs = seq(0.1, 1, by = 0.1), 
             na.rm = TRUE)))
@@ -375,20 +375,20 @@ smbinning2 = function(df, y, x, p=0.05){
 # smbinning optim ~ 5 mins
 
 #recipe
-col_names <- sapply(application_train, function(col) length(unique(col)) < 6)
+#col_names <- sapply(application_train, function(col) length(unique(col)) < 6)
 # need to exclude target since smbinning expects non factor input
 
-str(application_train)[1:10]
-
-
-select(col_names, TARGET)
-str(col_names)
-application_train[ , col_names] <- lapply(application_train[ , col_names] , factor)
-application_train$TARGET <- as.numeric(application_train$TARGET)-1
-## Baseline for 50k application data IV calc ~
-# smbinning 
-
-#optim - might need to recheck parallel and rather do foreach instead on mclappy, check if running multiple vars?
-iv_calculation_cit(application_train[1:50000,], 'TARGET')
-
-cross_plot(application_train, TARGET, AMT_INCOME_TOTAL)
+#str(application_train)[1:10]
+# 
+# 
+# select(col_names, TARGET)
+# str(col_names)
+# application_train[ , col_names] <- lapply(application_train[ , col_names] , factor)
+# application_train$TARGET <- as.numeric(application_train$TARGET)-1
+# ## Baseline for 50k application data IV calc ~
+# # smbinning 
+# 
+# #optim - might need to recheck parallel and rather do foreach instead on mclappy, check if running multiple vars?
+# iv_calculation_cit(application_train[1:50000,], 'TARGET')
+# 
+# cross_plot(application_train, TARGET, AMT_INCOME_TOTAL)
