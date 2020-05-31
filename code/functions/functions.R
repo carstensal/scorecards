@@ -392,3 +392,172 @@ smbinning2 = function(df, y, x, p=0.05){
 # iv_calculation_cit(application_train[1:50000,], 'TARGET')
 # 
 # cross_plot(application_train, TARGET, AMT_INCOME_TOTAL)
+
+smbinning.factor2 <- function (df, y, x, maxcat = 20) 
+{
+  pmt <<-  proc.time()
+  
+  if (!is.data.frame(df)) {
+    return("Data not a data.frame")
+  }
+  else if (is.numeric(y) | is.numeric(x)) {
+    return("Column name not string")
+  }
+  else if (grepl("[.]", y) | grepl("[.]", x)) {
+    return("Column name with a dot [.]")
+  }
+  else i = which(names(df) == y)
+  j = which(names(df) == x)
+  if (!is.numeric(df[, i])) {
+    return("Target (y) not found or it is not numeric")
+  }
+  else if (max(df[, i], na.rm = T) != 1) {
+    return("Maximum not 1")
+  }
+  else if (any(grepl(",", df[, j]))) {
+    return("Values contain comma")
+  }
+  else if (tolower(y) == "default") {
+    return("Field name 'default' not allowed")
+  }
+  else if (fn$sqldf("select count(*) from df where cast($x as text)='Inf' or cast($x as text)='-Inf'") > 
+           0) {
+    return("Characteristic (x) with an 'Inf' value (Divided by Zero). Replace by NA")
+  }
+  else if (min(df[, i], na.rm = T) != 0) {
+    return("Minimum not 0")
+  }
+  else if (!is.factor(df[, j])) {
+    return("Characteristic (x) not found or it is not a factor")
+  }
+  else if (length(unique(df[, j])) <= 1) {
+    return("Characteristic (x) requires at leats 2 uniques categories")
+  }
+  else if (length(unique(df[, j])) > maxcat) {
+    return("Too many categories")
+  }
+  else {
+    
+    cat(proc.time() - ptm)
+    cat("Start checks done \\n")
+    
+    #split select because need to run filter for all NA values again for Missing calculation
+    df_selected <<- select(df, x, y)
+    
+    
+    
+    #could change to parse from function entry, need to check rlang?
+    #colnames(df_selected) <- c("X_Var", "Y_Var")
+    df_no_na <<- filter(df_selected, !is.na(!!as.name(x) ))
+    
+    
+    result <<- df_no_na %>% group_by(!!as.name(x) ) %>%
+      mutate( Good = sum(!!as.name(y) ==1), Bad = sum(!!as.name(y)==0)) %>%
+      count(Good, Bad) %>%
+      arrange(desc(n))
+    
+    ivt3 = as.data.frame(Cutpoint = result[,1], CntGood = result$Good)
+    
+    ivt3 <<- ivt3
+    
+    cutvct = c()
+    cuts = fn$sqldf("select distinct $x from df where $x is not NULL")
+    cuts = as.vector(as.matrix(cuts))
+    n = length(cuts)
+    if (n < 1) {
+      return("No Bins")
+    }
+    for (i in 1:n) {
+      cutvct = rbind(cutvct, cuts[i])
+    }
+    cutvct = cutvct[order(cutvct[, 1]), ]
+    ivt = data.frame(matrix(ncol = 0, nrow = 0))
+    
+    cat(proc.time() - ptm)
+    cat("Cuts done \\n")
+    
+    n = length(cutvct)
+    for (i in 1:n) {
+      cutpoint = cutvct[i]
+      ivt = rbind(ivt, fn$sqldf("select '= ''$cutpoint''' as Cutpoint,\\n                  sum(case when $x = '$cutpoint' and $y in (1,0) then 1 else 0 end) as CntRec,\\n                  sum(case when $x = '$cutpoint' and $y=1 then 1 else 0 end) as CntGood,\\n                  sum(case when $x = '$cutpoint' and $y=0 then 1 else 0 end) as CntBad,\\n                  NULL as CntCumRec,\\n                  NULL as CntCumGood,\\n                  NULL as CntCumBad,\\n                  NULL as PctRec,\\n                  NULL as GoodRate,\\n                  NULL as BadRate,\\n                  NULL as Odds,\\n                  NULL as LnOdds,\\n                  NULL as WoE,\\n                  NULL as IV\\n                  from df where $x is not NULL and $y is not NULL"))
+    }
+    x.na = fn$sqldf("select count(*) from df where $x is null")
+    y.na = fn$sqldf("select count(*) from df where $y is null")
+    
+    ivt2 <<- ivt
+    
+    cat(proc.time() - ptm)
+    cat("ivt 1done \\n")
+    
+    if (x.na > 0) {
+      ivt = rbind(ivt, fn$sqldf("select 'Missing' as Cutpoint,\\n                  sum(case when $x is NULL and $y in (1,0) then 1 else 0 end) as CntRec,\\n                  sum(case when $x is NULL and $y=1 then 1 else 0 end) as CntGood,\\n                  sum(case when $x is NULL and $y=0 then 1 else 0 end) as CntBad,\\n                  NULL as CntCumRec,\\n                  NULL as CntCumGood,\\n                  NULL as CntCumBad,\\n                  NULL as PctRec,\\n                  NULL as GoodRate,\\n                  NULL as BadRate,\\n                  NULL as Odds,\\n                  NULL as LnOdds,\\n                  NULL as WoE,\\n                  NULL as IV\\n                  from df where $y is not NULL"))
+    }
+    else {
+      ivt = rbind(ivt, c("Missing", 0, 0, 0, NA, NA, NA, 
+                         NA, NA, NA, NA, NA, NA))
+    }
+    
+    cat(proc.time() - ptm)
+    cat("ivt missing \\n")
+    
+    ivt = rbind(ivt, fn$sqldf("select 'Total' as Cutpoint,\\n                count(*) as CntRec,\\n                sum(case when $y=1 then 1 else 0 end) as CntGood,\\n                sum(case when $y=0 then 1 else 0 end) as CntBad,\\n                NULL as CntCumRec,\\n                NULL as CntCumGood,\\n                NULL as CntCumBad,\\n                NULL as PctRec,\\n                NULL as GoodRate,\\n                NULL as BadRate,\\n                NULL as Odds,\\n                NULL as LnOdds,\\n                NULL as WoE,\\n                NULL as IV\\n                from df where $y is not NULL"))
+    options(warn = -1)
+    ncol = ncol(ivt)
+    
+    cat(proc.time() - ptm)
+    cat("ivt total \\n")
+    
+    for (i in 2:ncol) {
+      ivt[, i] = as.numeric(ivt[, i])
+    }
+    
+    cat(proc.time() - ptm)
+    cat("numeric conversion \\n")
+    
+    options(warn = 0)
+    ivt[1, 5] = ivt[1, 2]
+    ivt[1, 6] = ivt[1, 3]
+    ivt[1, 7] = ivt[1, 4]
+    n = nrow(ivt) - 2
+    for (i in 2:n) {
+      ivt[i, 5] = ivt[i, 2] + ivt[i - 1, 5]
+      ivt[i, 6] = ivt[i, 3] + ivt[i - 1, 6]
+      ivt[i, 7] = ivt[i, 4] + ivt[i - 1, 7]
+    }
+    ivt[2, 5] = ivt[2, 2] + ivt[1, 5]
+    ivt[2, 6] = ivt[2, 3] + ivt[1, 6]
+    ivt[2, 7] = ivt[2, 4] + ivt[1, 7]
+    ivt[i + 1, 5] = ivt[i, 5] + ivt[i + 1, 2]
+    ivt[i + 1, 6] = ivt[i, 6] + ivt[i + 1, 3]
+    ivt[i + 1, 7] = ivt[i, 7] + ivt[i + 1, 4]
+    options(scipen = 999)
+    ivt[, 8] = round(ivt[, 2]/ivt[i + 2, 2], 4)
+    ivt[, 9] = round(ivt[, 3]/ivt[, 2], 4)
+    ivt[, 10] = round(ivt[, 4]/ivt[, 2], 4)
+    ivt[, 11] = round(ivt[, 3]/ivt[, 4], 4)
+    ivt[, 12] = round(log(ivt[, 3]/ivt[, 4]), 4)
+    G = ivt[i + 2, 3]
+    B = ivt[i + 2, 4]
+    LnGB = log(G/B)
+    ivt[, 13] = round(log(ivt[, 3]/ivt[, 4]) - LnGB, 4)
+    ivt[, 14] = round(ivt[, 13] * (ivt[, 3]/G - ivt[, 4]/B), 
+                      4)
+    ivt[i + 2, 14] = 0
+    for (k in 1:(nrow(ivt) - 1)) {
+      if (is.finite(ivt[k, 14])) {
+        mgiv = ivt[k, 14]
+      }
+      else {
+        mgiv = 0
+      }
+      ivt[i + 2, 14] = ivt[i + 2, 14] + mgiv
+    }
+    iv = ivt[i + 2, 14]
+  }
+  
+  cat(proc.time() - ptm)
+  cat("bin done \\n")
+  
+  list(ivtable = ivt, iv = iv, x = x, col_id = j, cuts = cutvct)
+}
+
