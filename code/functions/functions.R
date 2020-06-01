@@ -31,7 +31,6 @@ binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL, type = "CIT") {
 }
 
 
-
 #' IV Calculation for all variables
 #'
 #' @param df Dataframe containing dataset loaded from input function
@@ -47,24 +46,24 @@ binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL, type = "CIT") {
 #' Added parallel for speedup and pbapply for progress bar. Initial setup slows down, but big improvement on large datasets
 #'     
 
-iv_calculation_cit <- function (df, y, categories = 16) 
+function (df, y, categories = 16) 
 {
   #setup parallel 
   nr_cores <- max(1, detectCores() - 1)
   cl <- makeCluster(nr_cores, type = "PSOCK") #change to FORK on linux
   
-  clusterExport(cl, "smbinning2")
+  clusterExport(cl, c("smbinning2", "smbinning.factor2"))
   clusterEvalQ(cl, library(smbinning))
   clusterEvalQ(cl, library(dplyr))
+  
   if (!is.data.frame(df)) {
     return("Data not a data.frame")
   }
   else {
     options(warn = -1)
-    cat("", "\n")
-    pboptions(type="txt", char=":)")
+    pboptions(type="timer", char="@)")
     iv_table = t(pbsapply(1:ncol(df), function(i){
-
+      
       if (colnames(df[i]) != y) {
         
         # FOR NUMERICAL VARIABLES
@@ -80,34 +79,30 @@ iv_calculation_cit <- function (df, y, categories = 16)
         # FOR FACTOR VARIABLES
         else{
           if(is.factor(df[, i])){
-            smbfac = smbinning.factor(df, y, colnames(df[i]), maxcat = categories)
+            smbfac = smbinning.factor2(df, y, colnames(df[i]), maxcat = categories)
             if (is.list(smbfac))
               c(colnames(df[i]), smbfac$iv, "Factor binning OK")
-            
             else
               c(colnames(df[i]),  NA, smbfac)
-            
           }
           else
             c(colnames(df[i]), NA, "Not numeric nor factor")
-          
         }
       } 
       else
         c(NA,NA,NA)
       
     }, cl = cl))
-
+    
     #disable second progressbar
     pbo <- pboptions(type = "none")
     iv_table = iv_table[pbapply(iv_table, 1, function(arg) {sum(is.na(arg))<3}, cl = cl),]
     stopCluster(cl)
     iv_table = iv_table[order(iv_table[,2],decreasing=T),]
-    iv_table = data.frame(Char = as.character(iv_table[,1])
+    iv_table = data.frame(Variable = as.character(iv_table[,1])
                           , IV = as.numeric(as.character(iv_table[,2]))
                           , Process=iv_table[,3])
     
-    #Add predictiveness according to norm (Sideeqi)
     iv_table <- mutate(iv_table, Predictiveness = case_when(
       IV > 0.5 ~ "Suspicious",
       IV >= 0.3 ~ "Strong",
@@ -117,12 +112,9 @@ iv_calculation_cit <- function (df, y, categories = 16)
       IV == NA ~ "NA"
     ))
     
-    
     options(warn = 0)
     t1 <<- iv_table
     return(iv_table)
- 
-    
   }
 }
 
@@ -168,7 +160,6 @@ smbinning.sumiv.plot=function(sumivt, cex=0.9){
 
 smbinning2 = function(df, y, x, p=0.05){
     # Check data frame and formats
-    ptm <- proc.time()
     
     if (!is.data.frame(df)){ # Check if data.frame
       return("Data not a data.frame")
@@ -202,9 +193,6 @@ smbinning2 = function(df, y, x, p=0.05){
                   control=ctree_control(minbucket=ceiling(round(p*nrow(df)))))
       bins=width(ctree)
       
-      cat(proc.time() - ptm)
-      cat("Ctree done \n")
-      
       if (bins<2){return("No significant splits")}
       # Append cutpoinstop()ts in a table (Automated)
       cutvct=data.frame(matrix(ncol=0,nrow=0)) # Shell
@@ -212,9 +200,6 @@ smbinning2 = function(df, y, x, p=0.05){
       for (i in 1:n) {
         cutvct=rbind(cutvct,ctree[i]$node$split$breaks)
       }
-      
-      cat(proc.time() - ptm)
-      cat("Ctree loop \n")
       
       cutvct=cutvct[order(cutvct[,1]),] # Sort / converts to a ordered vector (asc)
       cutvct=ifelse(cutvct<0,trunc(10000*cutvct)/10000,ceiling(10000*cutvct)/10000) # Round to 4 dec. to avoid borderline cases
@@ -259,7 +244,8 @@ smbinning2 = function(df, y, x, p=0.05){
       
       maxcutpoint=max(cutvct) # Calculte Max cut point
       mincutpoint=min(df[,j],na.rm=T) # Calculte Min without Missing for later usage
-      mincutpoint=ifelse(mincutpoint<0,trunc(10000*mincutpoint)/10000,ceiling(10000*mincutpoint)/10000) # Round to 4 dec. to avoid borderline cases 
+      mincutpoint=ifelse(mincutpoint<0,trunc(10000*mincutpoint)/10000,ceiling(10000*mincutpoint)/10000) 
+      # Round to 4 dec. to avoid borderline cases 
       
       
       # Entry for Missing Data
@@ -288,10 +274,7 @@ smbinning2 = function(df, y, x, p=0.05){
       CntBadTotal <- df_total$n[1]
       ivt = rbind(ivt,
                   c("Missing", CntRecTotal, CntGoodTotal, CntBadTotal, NA, NA, NA, NA, NA, NA, NA, NA, NA))
-      
-      
-      cat(proc.time() - ptm)
-      cat("Total Rbind \n")
+
       
       # Covert to table numeric
       options(warn=-1)
@@ -300,9 +283,6 @@ smbinning2 = function(df, y, x, p=0.05){
         ivt[,i]=as.numeric(ivt[,i])
       }
       options(warn=0)
-      
-      cat(proc.time() - ptm)
-      cat("Numeric conversion loop \n")
       
       # Complete Table 
       ivt[1,2]=ivt[1,5] # Nbr Records
@@ -314,9 +294,6 @@ smbinning2 = function(df, y, x, p=0.05){
       for (i in 2:n){ivt[i,2]=ivt[i,5]-ivt[i-1,5]
       ivt[i,3]=ivt[i,6]-ivt[i-1,6]
       ivt[i,4]=ivt[i,7]-ivt[i-1,7]}
-      
-      cat(proc.time() - ptm)
-      cat("Calc loop \n")
       
       ivt[2,2]=ivt[2,5]-ivt[1,5]
       ivt[2,3]=ivt[2,6]-ivt[1,6]
@@ -342,9 +319,7 @@ smbinning2 = function(df, y, x, p=0.05){
       # ivt[i+2,14]=round(sum(ivt[,13]*(ivt[,3]/G-ivt[,4]/B),na.rm=T),4) -- Old Calculation
       # Calculates Information Value even with undefined numbers
       ivt[i+2,14]=0.0000
-      
-      cat(proc.time() - ptm)
-      cat("Calculations \n")
+
       
       for (k in 1:(nrow(ivt)-1))
       {
@@ -352,17 +327,12 @@ smbinning2 = function(df, y, x, p=0.05){
         ivt[i+2,14]=ivt[i+2,14]+mgiv
       }
       iv=ivt[i+2,14]
-      cat(proc.time() - ptm)
-      cat("Func done \n")
       
       # End Inf. Value Table ###################################################### 
     }
     bands=append(mincutpoint,cutvct)
     bands=append(bands,cutpoint)
     iv=ivt[i+2,14]
-    
-    cat(proc.time() - ptm)
-    cat("smbin  done \n")
     
     list(ivtable=ivt,iv=iv,ctree=ctree,bands=bands,x=x,col_id=j,cuts=cutvct)
     
@@ -378,24 +348,29 @@ smbinning2 = function(df, y, x, p=0.05){
 #col_names <- sapply(application_train, function(col) length(unique(col)) < 6)
 # need to exclude target since smbinning expects non factor input
 
-#str(application_train)[1:10]
-# 
-# 
-# select(col_names, TARGET)
-# str(col_names)
-# application_train[ , col_names] <- lapply(application_train[ , col_names] , factor)
-# application_train$TARGET <- as.numeric(application_train$TARGET)-1
-# ## Baseline for 50k application data IV calc ~
-# # smbinning 
 # 
 # #optim - might need to recheck parallel and rather do foreach instead on mclappy, check if running multiple vars?
-# iv_calculation_cit(application_train[1:50000,], 'TARGET')
+#'  iv_calculation_cit(application_train[1:50000,], 'TARGET') 
+#'  Orig ~ 30mins
+#'  Smb optim ~ 56
+#'  Parallel = 44
+#'  Optim smb.factor2 = 
+
 # 
 # cross_plot(application_train, TARGET, AMT_INCOME_TOTAL)
 
+#' Bin categorical variable
+#'
+#' @param x Character string indicating which variable is being binned 
+#' @param y Binary response variable 
+#' @param dftrain Data frame containing the training data
+
+
+#' Updated from base by using dplyr rather than loops, categorical binning on 300k sample down from 78 seconds to <5s
+#'    
+
 smbinning.factor2 <- function (df, y, x, maxcat = 20) 
 {
-  pmt <<-  proc.time()
   
   if (!is.data.frame(df)) {
     return("Data not a data.frame")
@@ -438,81 +413,75 @@ smbinning.factor2 <- function (df, y, x, maxcat = 20)
   }
   else {
     
-    cat(proc.time() - ptm)
-    cat("Start checks done \\n")
-    
     #split select because need to run filter for all NA values again for Missing calculation
-    df_selected <<- select(df, x, y)
+    df_selected <<- select(df, all_of(x), all_of(y))
     
+    #could change to parse from function entry, need to check rlang?, below works, but in storing easier to name now
+    #df_no_na <<- filter(df_selected, !is.na(!!as.name(x) ))
     
+    colnames(df_selected) <- c("X_Var", "Y_Var")
     
-    #could change to parse from function entry, need to check rlang?
-    #colnames(df_selected) <- c("X_Var", "Y_Var")
-    df_no_na <<- filter(df_selected, !is.na(!!as.name(x) ))
+    df_no_na <- filter(df_selected, !is.na(X_Var))
     
-    
-    result <<- df_no_na %>% group_by(!!as.name(x) ) %>%
-      mutate( Good = sum(!!as.name(y) ==1), Bad = sum(!!as.name(y)==0)) %>%
+    result <- df_no_na %>% group_by(X_Var) %>%
+      mutate( Good = sum(Y_Var == 1), Bad = sum(Y_Var == 0)) %>%
       count(Good, Bad) %>%
       arrange(desc(n))
     
-    ivt3 = as.data.frame(Cutpoint = result[,1], CntGood = result$Good)
+    ivt = cbind.data.frame(Cutpoint = paste("=", result$X_Var)
+                           , CntRec = result$n
+                           , CntGood = result$Good
+                           , CntBad = result$Bad
+                           , CntCumRec = 0
+                           , CntCumGood = 0
+                           , CntCumBad = 0
+                           , PctRec = 0
+                           , GoodRate = 0
+                           , BadRate = 0
+                           , Odds = 0
+                           , LnOdds = 0
+                           , WoE = 0
+                           , IV = 0
+    )
     
-    ivt3 <<- ivt3
     
-    cutvct = c()
-    cuts = fn$sqldf("select distinct $x from df where $x is not NULL")
-    cuts = as.vector(as.matrix(cuts))
-    n = length(cuts)
-    if (n < 1) {
-      return("No Bins")
-    }
-    for (i in 1:n) {
-      cutvct = rbind(cutvct, cuts[i])
-    }
-    cutvct = cutvct[order(cutvct[, 1]), ]
-    ivt = data.frame(matrix(ncol = 0, nrow = 0))
+    cutvct = as.vector(as.matrix(result[,1]))
     
-    cat(proc.time() - ptm)
-    cat("Cuts done \\n")
+    if (length(cutvct) < 1) {return("No Bins")}   
     
-    n = length(cutvct)
-    for (i in 1:n) {
-      cutpoint = cutvct[i]
-      ivt = rbind(ivt, fn$sqldf("select '= ''$cutpoint''' as Cutpoint,\\n                  sum(case when $x = '$cutpoint' and $y in (1,0) then 1 else 0 end) as CntRec,\\n                  sum(case when $x = '$cutpoint' and $y=1 then 1 else 0 end) as CntGood,\\n                  sum(case when $x = '$cutpoint' and $y=0 then 1 else 0 end) as CntBad,\\n                  NULL as CntCumRec,\\n                  NULL as CntCumGood,\\n                  NULL as CntCumBad,\\n                  NULL as PctRec,\\n                  NULL as GoodRate,\\n                  NULL as BadRate,\\n                  NULL as Odds,\\n                  NULL as LnOdds,\\n                  NULL as WoE,\\n                  NULL as IV\\n                  from df where $x is not NULL and $y is not NULL"))
-    }
-    x.na = fn$sqldf("select count(*) from df where $x is null")
-    y.na = fn$sqldf("select count(*) from df where $y is null")
+    # Entry for Missing Data
+    if(sum(is.na(df_selected))>0){
+      df_na <- filter(df_selected, is.na(X_Var)) %>%
+        group_by(Y_Var) %>%
+        count()
+      
+      CntRecNA <- sum(df_na)-1
+      CntGoodNA <- df_na$n[2]
+      CntBadNA <- df_na$n[1]
+      
+      ivt = rbind(ivt,
+                  c("Missing", CntRecNA, CntGoodNA, CntBadNA, NA, NA, NA, NA, NA, NA, NA, NA, NA))
+    } 
+    else{
+      ivt = rbind(ivt,
+                  c("Missing",0,0,0,0,0,0,NA,NA,NA,NA,NA,NA))}
     
-    ivt2 <<- ivt
+    # Total data entry
+    df_total <- as.data.frame(group_by(df_selected, Y_Var) %>%
+                                count())
     
-    cat(proc.time() - ptm)
-    cat("ivt 1done \\n")
+    CntRecTotal <- sum(df_total)-1
+    CntGoodTotal <- df_total$n[2]
+    CntBadTotal <- df_total$n[1]
+    ivt = rbind(ivt,
+                c("Total", CntRecTotal, CntGoodTotal, CntBadTotal, NA, NA, NA, NA, NA, NA, NA, NA, NA))
     
-    if (x.na > 0) {
-      ivt = rbind(ivt, fn$sqldf("select 'Missing' as Cutpoint,\\n                  sum(case when $x is NULL and $y in (1,0) then 1 else 0 end) as CntRec,\\n                  sum(case when $x is NULL and $y=1 then 1 else 0 end) as CntGood,\\n                  sum(case when $x is NULL and $y=0 then 1 else 0 end) as CntBad,\\n                  NULL as CntCumRec,\\n                  NULL as CntCumGood,\\n                  NULL as CntCumBad,\\n                  NULL as PctRec,\\n                  NULL as GoodRate,\\n                  NULL as BadRate,\\n                  NULL as Odds,\\n                  NULL as LnOdds,\\n                  NULL as WoE,\\n                  NULL as IV\\n                  from df where $y is not NULL"))
-    }
-    else {
-      ivt = rbind(ivt, c("Missing", 0, 0, 0, NA, NA, NA, 
-                         NA, NA, NA, NA, NA, NA))
-    }
     
-    cat(proc.time() - ptm)
-    cat("ivt missing \\n")
-    
-    ivt = rbind(ivt, fn$sqldf("select 'Total' as Cutpoint,\\n                count(*) as CntRec,\\n                sum(case when $y=1 then 1 else 0 end) as CntGood,\\n                sum(case when $y=0 then 1 else 0 end) as CntBad,\\n                NULL as CntCumRec,\\n                NULL as CntCumGood,\\n                NULL as CntCumBad,\\n                NULL as PctRec,\\n                NULL as GoodRate,\\n                NULL as BadRate,\\n                NULL as Odds,\\n                NULL as LnOdds,\\n                NULL as WoE,\\n                NULL as IV\\n                from df where $y is not NULL"))
     options(warn = -1)
     ncol = ncol(ivt)
     
-    cat(proc.time() - ptm)
-    cat("ivt total \\n")
-    
-    for (i in 2:ncol) {
-      ivt[, i] = as.numeric(ivt[, i])
-    }
-    
-    cat(proc.time() - ptm)
-    cat("numeric conversion \\n")
+    #changed for loop numeric change to apply
+    ivt[, 2:ncol] <- sapply(ivt[, 2:ncol], as.numeric)
     
     options(warn = 0)
     ivt[1, 5] = ivt[1, 2]
@@ -555,9 +524,6 @@ smbinning.factor2 <- function (df, y, x, maxcat = 20)
     iv = ivt[i + 2, 14]
   }
   
-  cat(proc.time() - ptm)
-  cat("bin done \\n")
   
   list(ivtable = ivt, iv = iv, x = x, col_id = j, cuts = cutvct)
 }
-
