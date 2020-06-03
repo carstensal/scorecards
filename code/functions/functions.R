@@ -273,15 +273,15 @@ smbinning2 = function(df, y, x, p=0.05){
       CntGoodTotal <- df_total$n[2]
       CntBadTotal <- df_total$n[1]
       ivt = rbind(ivt,
-                  c("Missing", CntRecTotal, CntGoodTotal, CntBadTotal, NA, NA, NA, NA, NA, NA, NA, NA, NA))
+                  c("Total", CntRecTotal, CntGoodTotal, CntBadTotal, NA, NA, NA, NA, NA, NA, NA, NA, NA))
 
       
       # Covert to table numeric
       options(warn=-1)
       ncol=ncol(ivt)
-      for (i in 2:ncol){
-        ivt[,i]=as.numeric(ivt[,i])
-      }
+      #changed for loop numeric change to apply
+      ivt[, 2:ncol] <- sapply(ivt[, 2:ncol], as.numeric)
+      
       options(warn=0)
       
       # Complete Table 

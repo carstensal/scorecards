@@ -128,7 +128,7 @@ smbinning.custom2 <- function (df, y, x, cuts)
     CntGoodTotal <- df_total$n[2]
     CntBadTotal <- df_total$n[1]
     ivt = rbind(ivt,
-                c("Missing", CntRecTotal, CntGoodTotal, CntBadTotal, NA, NA, NA, NA, NA, NA, NA, NA, NA))
+                c("Total", CntRecTotal, CntGoodTotal, CntBadTotal, NA, NA, NA, NA, NA, NA, NA, NA, NA))
     
     
     # Covert to table numeric

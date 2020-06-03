@@ -5,7 +5,7 @@ source("code/utilities.R")
 
 
 source("code/functions/functions.R")
-source("code/functions//smbinning.custom2.R")
+source("code/functions/smbinning.custom2.R")
 source("code/modules/module_data.R")
 source("code/modules/module_explore.R")
 source("code/modules/module_sample.R")
