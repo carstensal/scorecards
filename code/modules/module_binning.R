@@ -14,30 +14,31 @@
 #'     the test data
 #'     
 #'     
-# binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL,
-#                             type = "CIT") {
-#   if (is.null(cuts) && type == "CIT") {
-#     bin_train <- smbinning(dftrain, y, x)
-#   } else if (is.null(cuts) && type != "CIT") {
-#     cuts <- unique(
-#       c(min(dftrain[[x]], na.rm = TRUE),
-#         quantiles = quantile(
-#           dftrain[[x]], probs = seq(0.1, 1, by = 0.1),
-#           na.rm = TRUE
-#         )
-#       )
-#     )
-#     bin_train <- smbinning.custom(dftrain, y, x, cuts)
-#   } else {
-#     bin_train <- smbinning.custom(dftrain, y, x, cuts)
-#   }
-#   if (class(bin_train) != "character") {
-#     bin_test <- smbinning.custom(dftest, y, x, bin_train$cuts)
-#   } else {
-#     bin_test <- bin_train
-#   }
-#   list(bin_train = bin_train, bin_test = bin_test)
-# }
+binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL,
+                              type = "CIT") {
+    if (is.null(cuts) && type == "CIT") {
+      bin_train <<- smbinning(dftrain, y, x)
+      bin_test <- bin_train
+    } else if (is.null(cuts) && type != "CIT") {
+      cuts <- unique(
+        c(min(dftrain[[x]], na.rm = TRUE),
+          quantiles = quantile(
+            dftrain[[x]], probs = seq(0.1, 1, by = 0.1),
+            na.rm = TRUE
+          )
+        )
+      )
+      bin_train <- smbinning.custom(dftrain, y, x, cuts)
+    } else {
+      bin_train <- smbinning.custom(dftrain, y, x, cuts)
+    }
+    if (class(bin_train) != "character") {
+      bin_test <- smbinning.custom(dftest, y, x, bin_train$cuts)
+    } else {
+      bin_test <- smbinning(dftest, y, x)
+    }
+    list(bin_train = bin_train, bin_test = bin_test)
+  }
 
 #' Bin categorical variable
 #'
@@ -82,14 +83,14 @@ binning_categorical <- function(x, y, dftrain, dftest, groups = NULL) {
 #'
 #' @return a \code{shiny::\link[shiny]{tagList}} containing UI elements
 binning_ui <- function(id) {
-  
   ns <- NS(id)
+  
+  shinyjs::useShinyjs()
   tagList(
     column(
-      9,
+      12,
       uiOutput(ns("binningwindow"))
-    ),
-    column(3, includeMarkdown("qh_binning.md"))
+    )#,column(3, includeMarkdown("qh_binning.md"))
   )
   
 }
@@ -110,6 +111,11 @@ binning_ui <- function(id) {
 #' }
 binning_server <- function(input, output, session, modeltraintest,
                            modeldataspecs, goodbad_var) {
+  
+ 
+  # observe({
+  #   shinyjs::toggleState(session$ns("input_cut"), input$bintype == "Input")
+  # })
   
   # Reactive values to hold binnings.
   binning_g <- reactiveValues()
@@ -142,7 +148,10 @@ binning_server <- function(input, output, session, modeltraintest,
                      label = "Choose method (numeric only)",
                      choices = c("CIT", "Input"),
                      inline = TRUE),
-        textInput(session$ns("input_cut"), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimited'),
+        
+      #  observeEvent(input$bintype, {if (input$bintype == "Input") enable(textInput(session$ns("input_cut"), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimiter'))}),
+        
+        textInput(session$ns("input_cut"), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimiter'),
         actionButton(session$ns("dobin"), "Bin"),
         br(),
         br(),
@@ -165,12 +174,6 @@ binning_server <- function(input, output, session, modeltraintest,
                           plotOutput(session$ns("distr_plot"))
                       )),
         
-       # plotOutput(session$ns("woetraintest")),
-      #  br(),
-       # div(helpText("Weight of Evidence plot"), style = "font-weight:bold;"),    
-       # plotOutput(session$ns("woe_plot") ),
-      #  div(helpText("Distribution plot"), style = "font-weight:bold;"), 
-       # plotOutput(session$ns("distr_plot") ),
         div(helpText("Weight of Evidence and Information Value - Training"), style = "font-weight:bold;"),
         rHandsontableOutput(session$ns("ivtrain")),
         br(),
@@ -215,7 +218,7 @@ binning_server <- function(input, output, session, modeltraintest,
         b <- binning_categorical(binvar, goodbad_var(), mtt$train, mtt$test)
         binning_g[[binvar]] <- b
         setProgress(value = 1, message = "Auto-binning complete.")
-        Sys.sleep(1)
+        Sys.sleep(0.1)
       }, value = 0.5, message = paste0("Auto-binning ", binvar, ". Please wait."))
     } else {
       showNotification(paste0("Error: Attempt to bin variable which is not ", "numeric or character."), duration = NULL, type = "error")
@@ -430,7 +433,7 @@ binning_server <- function(input, output, session, modeltraintest,
   
   # WoE plot.
   output$woetraintest <- renderPlot({
-    bin <<- req(binning()[[input$binvar]])
+    bin <- req(binning()[[input$binvar]])
     validate(need(class(bin$bin_train) != "character", message = "Variable not binned"))
     gtrain <- select(bin$bin_train$ivtable, Cutpoint, WoE) %>%
       mutate(ds = "Training")

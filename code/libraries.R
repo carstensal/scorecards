@@ -16,6 +16,7 @@ list.of.packages <- c("shiny"
     , "shinyhelper"
     , "pbapply"
     , "parallel"
+    , "shinyjs"
     )
 
 #checking missing packages from list
@@ -39,6 +40,7 @@ library(shinyjqui)
 library(shinyhelper)
 library(pbapply)
 library(parallel)
+library(shinyjs)
 
 # Options -----------------------------------------------------------------
 

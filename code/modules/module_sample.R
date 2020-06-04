@@ -41,13 +41,13 @@ sample_ui <- function(id) {
       9,
       sliderInput(ns("sampledata"),
                   label = "Choose % of records in training sample",
-                  min = 20, max = 80, value = 50, step = 5),
+                  min = 20, max = 80, value = 70, step = 5),
       actionButton(ns("sampledo"), "Sample", icon = icon("random")),
       textOutput(ns("samplestratvars")),
       br(),
       uiOutput(ns("sampleoutput"))
-    ),
-    column(3, includeMarkdown("qh_sample.md"))
+    )#,
+    #column(3, includeMarkdown("qh_sample.md"))
   )
   
 }

@@ -52,7 +52,7 @@ server <- shinyServer(function(input, output, session) {
       updateTabsetPanel(session, "nav_top", selected = current_tab)
       showModal(
         modalDialog(
-          includeMarkdown(paste0("h_", current_tab, ".md")),
+          includeMarkdown(paste0("helpfiles/h_", current_tab, ".md")),
           title = "Help",
           size = "l",
           easyClose = FALSE,

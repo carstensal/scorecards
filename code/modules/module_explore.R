@@ -185,7 +185,7 @@ explore_server <- function(input, output, session, modeldata, modeldataspecs) {
   # or a single variable.
   output$explorewindow <- renderUI({
     if (req(input$exploreonesumm) == "All Variables") {
-      print(summary_report(), method = "render", headings = FALSE)
+      column(8, print(summary_report(), method = "render", headings = FALSE))
     } else {
       chcs <- modeldataspecs()$vnames
       chcs <- chcs[modeldataspecs()$vtypes != "Date"]

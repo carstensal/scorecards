@@ -1,6 +1,7 @@
 # Application - UI --------------------------------------------------------
 
 ui <- shinyUI(
+   
   navbarPage(
     "Scorecard Builder",
     theme = shinytheme("flatly"),
@@ -23,6 +24,7 @@ ui <- shinyUI(
     ),
     tabPanel(
       span("Binning", title = "Weight of evidence and information value"),
+      useShinyjs(debug = TRUE),
       binning_ui("binning_module"),
       value = "binning"
     ),

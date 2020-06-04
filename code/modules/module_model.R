@@ -279,7 +279,7 @@ model_server <- function(input, output, session, modeltraintest,
     sidebarLayout(
       sidebarPanel(
         div(helpText("Scaling parameters"), style = "font-style:italic;"),
-        numericInput(session$ns("scalescore"), "Base Score", value = 400),
+        numericInput(session$ns("scalescore"), "Base Score", value = 600),
         numericInput(session$ns("scaleodds"), "Base Odds", value = 100),
         numericInput(session$ns("scalepdo"), "PDO", value = 20),
         br(),

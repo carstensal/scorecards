@@ -65,10 +65,9 @@ validation_ui <- function(id) {
   ns <- NS(id)
   tagList(
     column(
-      9,
+      11,
       uiOutput(ns("validationwindow"))
-    ),
-    column(3, includeMarkdown("qh_validation.md"))
+    )#,    column(3, includeMarkdown("qh_validation.md"))
   )
   
 }
@@ -182,6 +181,7 @@ validation_server <- function(input, output, session, scorecard, goodbad_var) {
       theme_bw() +
       geom_point(size = 5, alpha = 0.5) +
       geom_line(size = 1) +
+      #geom_bar(size = 1) +
       scale_y_continuous(labels = scales::percent) +
       expand_limits(y = 0) +
       annotate("text", x = nrow(df_summ) - 2,

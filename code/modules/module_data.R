@@ -41,7 +41,7 @@ data_ui <- function(id) {
       12,
       fileInput(ns("modeldata"), "Upload Data", accept = "text/csv", placeholder = "CSV file") %>% helper(type = "markdown",
                                                                                                           content = "data-upload"),
-      downloadLink(ns("downloadmodeldata"), "Download simulated data") ,
+      #downloadLink(ns("downloadmodeldata"), "Download simulated data") ,
       br(),
       br(),
       renderText(na("df_structure")),
