@@ -15,30 +15,29 @@
 #'     
 #'     
 binning_numeric <- function(x, y, dftrain, dftest, cuts = NULL,
-                              type = "CIT") {
-    if (is.null(cuts) && type == "CIT") {
-      bin_train <<- smbinning(dftrain, y, x)
-      bin_test <- bin_train
-    } else if (is.null(cuts) && type != "CIT") {
-      cuts <- unique(
-        c(min(dftrain[[x]], na.rm = TRUE),
-          quantiles = quantile(
-            dftrain[[x]], probs = seq(0.1, 1, by = 0.1),
-            na.rm = TRUE
-          )
+                            type = "CIT") {
+  if (is.null(cuts) && type == "CIT") {
+    bin_train <- smbinning2(dftrain, y, x)
+  } else if (is.null(cuts) && type != "CIT") {
+    cuts <- unique(
+      c(min(dftrain[[x]], na.rm = TRUE),
+        quantiles = quantile(
+          dftrain[[x]], probs = seq(0.1, 1, by = 0.1),
+          na.rm = TRUE
         )
       )
-      bin_train <- smbinning.custom(dftrain, y, x, cuts)
-    } else {
-      bin_train <- smbinning.custom(dftrain, y, x, cuts)
-    }
-    if (class(bin_train) != "character") {
-      bin_test <- smbinning.custom(dftest, y, x, bin_train$cuts)
-    } else {
-      bin_test <- smbinning(dftest, y, x)
-    }
-    list(bin_train = bin_train, bin_test = bin_test)
+    )
+    bin_train <- smbinning.custom2(dftrain, y, x, cuts)
+  } else {
+    bin_train <- smbinning.custom2(dftrain, y, x, cuts)
   }
+  if (class(bin_train) != "character") {
+    bin_test <- smbinning.custom2(dftest, y, x, bin_train$cuts)
+  } else {
+    bin_test <- bin_train
+  }
+  list(bin_train = bin_train, bin_test = bin_test)
+}
 
 #' Bin categorical variable
 #'
@@ -211,7 +210,7 @@ binning_server <- function(input, output, session, modeltraintest,
                 }
         binning_g[[binvar]] <- b
         setProgress(value = 1, message = "Auto-binning complete.")
-        Sys.sleep(1)
+        Sys.sleep(0.1)
       }, value = 0.5, message = paste0("Auto-binning ", binvar,". Please wait."))
     } else if (binvar_type == "character") {
       withProgress({

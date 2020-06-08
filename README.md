@@ -6,6 +6,7 @@ Idea behind app was to combine usual scorecard development tools into single int
 App development drew heavily from following sources:
 * https://github.com/grabear/awesome-rshiny
 * https://sites.google.com/site/shinyscorecards/
+
 * https://community.rstudio.com/t/shiny-contest-submission-build-credit-risk-scorecards/24798
 * https://cran.r-project.org/doc/contrib/Sharma-CreditScoring.pdf
 * and obviously Naeem Siddiqi's books which are to scorecard development 
@@ -31,6 +32,7 @@ dataviz
 
 
 https://ehrlinger.shinyapps.io/xportEDA/
+
 
 https://github.com/anup50695/RtutoR/blob/master/R/generate_ppt.R
 https://shiny.rstudio.com/gallery/explore-panel-data.html

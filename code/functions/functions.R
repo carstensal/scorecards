@@ -246,9 +246,9 @@ smbinning2 = function(df, y, x, p=0.05){
       # Covert to table numeric
       options(warn=-1)
       ncol=ncol(ivt)
-      for (i in 2:ncol){
-        ivt[,i]=as.numeric(ivt[,i])
-      }
+      #changed for loop numeric change to apply
+      ivt[, 2:ncol] <- sapply(ivt[, 2:ncol], as.numeric)
+      
       options(warn=0)
       
       # Complete Table 
