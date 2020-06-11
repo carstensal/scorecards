@@ -7,13 +7,13 @@ ui <- shinyUI(
     theme = shinytheme("flatly"),
     id = "nav_top",
     tabPanel(
-      span("Data", title = "Upload and manage data"),
+      span("Data", title = "Load and manage data"),
       data_ui("data_module"),
       value = "data"
     ),
     tabPanel(
       span("Explore",
-           title = "Descriptive statistics and distribution of variables"),
+           title = "Variable Exporation"),
       explore_ui("explore_module"),
       value = "explore"
     ),

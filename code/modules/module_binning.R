@@ -83,11 +83,17 @@ binning_categorical <- function(x, y, dftrain, dftest, groups = NULL) {
 #' @return a \code{shiny::\link[shiny]{tagList}} containing UI elements
 binning_ui <- function(id) {
   ns <- NS(id)
+
   
-  shinyjs::useShinyjs()
   tagList(
     column(
       12,
+      radioButtons(ns('bintype'),
+                   label = "Choose method (numeric only)",
+                   choices = c("CIT", "Input"),
+                   inline = TRUE),
+      textInput(ns('input_cut'), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimiter'),
+     # textInput(ns('text'), 'Name', value = "Testing 123"),
       uiOutput(ns("binningwindow"))
     )#,column(3, includeMarkdown("qh_binning.md"))
   )
@@ -110,13 +116,8 @@ binning_ui <- function(id) {
 #' }
 binning_server <- function(input, output, session, modeltraintest,
                            modeldataspecs, goodbad_var) {
-  
- 
-  # observe({
-  #   shinyjs::toggleState(session$ns("input_cut"), input$bintype == "Input")
-  # })
-  
-  # Reactive values to hold binnings.
+
+    # Reactive values to hold binnings.
   binning_g <- reactiveValues()
   
   # Clear binning on sample change.
@@ -143,14 +144,11 @@ binning_server <- function(input, output, session, modeltraintest,
     sidebarLayout(
       sidebarPanel(
         selectInput(session$ns("binvar"), "Choose variable", choices = binning_vars()),
-        radioButtons(session$ns("bintype"),
-                     label = "Choose method (numeric only)",
-                     choices = c("CIT", "Input"),
-                     inline = TRUE),
-        
-      #  observeEvent(input$bintype, {if (input$bintype == "Input") enable(textInput(session$ns("input_cut"), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimiter'))}),
-        
-        textInput(session$ns("input_cut"), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimiter'),
+        # radioButtons(session$ns("bintype"),
+        #              label = "Choose method (numeric only)",
+        #              choices = c("CIT", "Input"),
+        #              inline = TRUE),
+        #textInput(session$ns("input_cut"), "Cutpoints for variable", "20 40 60", placeholder = 'Use spaces as delimiter'),
         actionButton(session$ns("dobin"), "Bin"),
         br(),
         br(),
@@ -181,6 +179,19 @@ binning_server <- function(input, output, session, modeltraintest,
       )
     )
   })
+  
+  onevent("mouseenter", "input_cut", logjs("entered"))
+  
+ # observeEvent(input$bintype == "CIT", hide("input_cut", anim = TRUE))
+  
+  observe({
+    if (is.null(input$bintype) || input$bintype == "CIT") {
+      shinyjs::hide("input_cut", anim = TRUE)
+    } else {
+      shinyjs::show("input_cut", anim = TRUE)
+    }
+  })
+  
   
   # Binning object.
   binning <- reactive({
